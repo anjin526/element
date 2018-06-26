@@ -63,6 +63,8 @@ const convertToRows = (originColumns) => {
   return rows;
 };
 
+const tipsItemId = 'column-tips-item-id';
+
 export default {
   name: 'ElTableHeader',
 
@@ -74,6 +76,20 @@ export default {
     // 是否拥有多级表头
     const isGroup = columnRows.length > 1;
     if (isGroup) this.$parent.isGroup = true;
+
+    // header支持br换行 目前没有找到好的实现方法
+    const convertStringToJsx = (label)=>{
+      if (!label) {
+        return '';
+      }
+
+      const labelArray = label.split('<br/>');
+      return (
+        <div>
+          {labelArray.map((label) => <div>{label}</div>)}
+        </div>
+      );
+    };
     return (
       <table
         class="el-table__header"
@@ -107,11 +123,23 @@ export default {
                       on-contextmenu={ ($event) => this.handleHeaderContextMenu($event, column) }
                       style={ this.getHeaderCellStyle(rowIndex, cellIndex, columns, column) }
                       class={ this.getHeaderCellClass(rowIndex, cellIndex, columns, column) }>
-                      <div class={ ['cell', column.filteredValue && column.filteredValue.length > 0 ? 'highlight' : '', column.labelClassName] }>
+                      <div class={ [
+                        'cell',
+                        column.filteredValue && column.filteredValue.length > 0 ? 'highlight' : '',
+                        column.labelClassName,
+                        column.tips ? 'column-tips-wraper' : ''
+                      ] }>
+                        {convertStringToJsx(column.label)}
                         {
-                          column.renderHeader
-                            ? column.renderHeader.call(this._renderProxy, h, { column, $index: cellIndex, store: this.store, _self: this.$parent.$vnode.context })
-                            : column.label
+                          column.tips
+                            ? <div
+                              class="column-tips"
+                              on-mouseenter={ ($event) => this.handleTipHover($event, column) }
+                              on-mouseleave={ ($event) => this.handleTipLeave($event, column) }
+                            >
+                              <i class="el-icon-question"></i>
+                            </div>
+                            : ''
                         }
                         {
                           column.sortable
@@ -456,6 +484,40 @@ export default {
     handleMouseOut() {
       if (this.$isServer) return;
       document.body.style.cursor = '';
+    },
+
+    handleTipHover(event, column) {
+      const clientX = event.clientX;
+      const clientY = event.clientY;
+      const offsetX = event.offsetX;
+      const offsetY = event.offsetY;
+
+      const parentHeight = event.currentTarget.parentElement.parentElement.offsetHeight;
+      const parentWidth = event.currentTarget.parentElement.parentElement.offsetWidth;
+
+      const left = clientX - offsetX - (parentWidth - 30) / 2;
+      const top = clientY - offsetY - (parentHeight) / 2;
+      let wraper = document.getElementById(tipsItemId);
+      if (!wraper) {
+        const body = document.body;
+        wraper = document.createElement('div');
+        wraper.className = 'column-tips-item';
+        wraper.id = tipsItemId;
+        body.appendChild(wraper);
+      }
+
+      const iDom = document.createElement('i');
+      iDom.className = 'u-arrow';
+
+      wraper.style.cssText = `left:${left}px;top:${top}px;`;
+      wraper.innerHTML = column.tips;
+      wraper.appendChild(iDom);
+      wraper.style.display = 'block';
+    },
+
+    handleTipLeave(event, column) {
+      const wraper = document.getElementById(tipsItemId);
+      wraper.style.display = 'none';
     },
 
     toggleOrder({ order, sortOrders }) {

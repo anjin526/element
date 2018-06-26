@@ -149,6 +149,7 @@ export default {
     labelClassName: String,
     property: String,
     prop: String,
+    tips: String,
     width: {},
     minWidth: {},
     renderHeader: Function,
@@ -184,7 +185,7 @@ export default {
     sortOrders: {
       type: Array,
       default() {
-        return ['ascending', 'descending', null];
+        return ['descending', 'ascending', null];
       },
       validator(val) {
         return val.every(order => ['ascending', 'descending', null].indexOf(order) > -1);
@@ -250,6 +251,7 @@ export default {
       className: this.className,
       labelClassName: this.labelClassName,
       property: this.prop || this.property,
+      tips: this.tips,
       type,
       renderCell: null,
       renderHeader: this.renderHeader,

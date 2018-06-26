@@ -28,7 +28,11 @@
           <span class="el-select__tags-text">+ {{ selected.length - 1 }}</span>
         </el-tag>
       </span>
-      <transition-group @after-leave="resetInputHeight" v-if="!collapseTags">
+      <transition-group
+        @after-leave="resetInputHeight"
+        v-if="!collapseTags"
+        :style="'max-height:' + maxHeight + 'px;overflow:scroll;'"
+      >
         <el-tag
           v-for="item in selected"
           :key="getValueKey(item)"
@@ -40,33 +44,34 @@
           disable-transitions>
           <span class="el-select__tags-text">{{ item.currentLabel }}</span>
         </el-tag>
+        <input
+          type="text"
+          class="el-select__input"
+          key="select__input"
+          :class="[selectSize ? `is-${ selectSize }` : '']"
+          :disabled="selectDisabled"
+          :autocomplete="autoComplete"
+          @focus="handleFocus"
+          @blur="softFocus = false"
+          @click.stop
+          @keyup="managePlaceholder"
+          @keydown="resetInputState"
+          @keydown.down.prevent="navigateOptions('next')"
+          @keydown.up.prevent="navigateOptions('prev')"
+          @keydown.enter.prevent="selectOption"
+          @keydown.esc.stop.prevent="visible = false"
+          @keydown.delete="deletePrevTag"
+          @compositionstart="handleComposition"
+          @compositionupdate="handleComposition"
+          @compositionend="handleComposition"
+          v-model="query"
+          @input="(e) =>{handleQueryChange(e.target.value)}"
+          :debounce="remote ? 300 : 0"
+          v-if="filterable"
+          :style="{ width: inputLength + 'px', 'max-width': inputWidth - 42 + 'px' }"
+          ref="input">
       </transition-group>
 
-      <input
-        type="text"
-        class="el-select__input"
-        :class="[selectSize ? `is-${ selectSize }` : '']"
-        :disabled="selectDisabled"
-        :autocomplete="autoComplete"
-        @focus="handleFocus"
-        @blur="softFocus = false"
-        @click.stop
-        @keyup="managePlaceholder"
-        @keydown="resetInputState"
-        @keydown.down.prevent="navigateOptions('next')"
-        @keydown.up.prevent="navigateOptions('prev')"
-        @keydown.enter.prevent="selectOption"
-        @keydown.esc.stop.prevent="visible = false"
-        @keydown.delete="deletePrevTag"
-        @compositionstart="handleComposition"
-        @compositionupdate="handleComposition"
-        @compositionend="handleComposition"
-        v-model="query"
-        @input="e => handleQueryChange(e.target.value)"
-        :debounce="remote ? 300 : 0"
-        v-if="filterable"
-        :style="{ width: inputLength + 'px', 'max-width': inputWidth - 42 + 'px' }"
-        ref="input">
     </div>
     <el-input
       ref="reference"
@@ -108,6 +113,20 @@
         ref="popper"
         :append-to-body="popperAppendToBody"
         v-show="visible && emptyText !== false">
+        <div
+          class="totalWraper"
+          v-if="multiple && this.query"
+          :class="{
+            'selected': isTotal
+          }"
+        >
+          <el-checkbox
+            v-model="isTotal"
+            @change="handleTotalClick"
+          >
+            <span>全选</span>
+          </el-checkbox>
+        </div>
         <el-scrollbar
           tag="ul"
           wrap-class="el-select-dropdown__wrap"
@@ -118,7 +137,8 @@
           <el-option
             :value="query"
             created
-            v-if="showNewOption">
+            v-if="showNewOption"
+            :show-checkbox="true">
           </el-option>
           <slot></slot>
         </el-scrollbar>
@@ -140,6 +160,7 @@
   import ElInput from 'element-ui/packages/input';
   import ElSelectMenu from './select-dropdown.vue';
   import ElOption from './option.vue';
+  import ElCheckbox from 'element-ui/packages/checkbox';
   import ElTag from 'element-ui/packages/tag';
   import ElScrollbar from 'element-ui/packages/scrollbar';
   import debounce from 'throttle-debounce/debounce';
@@ -249,7 +270,8 @@
       ElSelectMenu,
       ElOption,
       ElTag,
-      ElScrollbar
+      ElScrollbar,
+      ElCheckbox
     },
 
     directives: { Clickoutside },
@@ -299,7 +321,8 @@
       popperAppendToBody: {
         type: Boolean,
         default: true
-      }
+      },
+      maxHeight: Number
     },
 
     data() {
@@ -324,7 +347,9 @@
         currentPlaceholder: '',
         menuVisibleOnFocus: false,
         isOnComposition: false,
-        isSilentBlur: false
+        isSilentBlur: false,
+
+        isTotal: false
       };
     },
 
@@ -348,7 +373,7 @@
             this.currentPlaceholder = this.cachedPlaceHolder;
           }
           if (this.filterable && !this.reserveKeyword) {
-            this.query = '';
+            // this.query = '';
             this.handleQueryChange(this.query);
           }
         }
@@ -668,6 +693,30 @@
             }
           }
         }, 300);
+      },
+
+      handleTotalClick() {
+        const value = this.value.slice();
+        const options = this.options;
+        const query = this.query;
+        const filterOptions = options.filter((option)=>{
+          return option.label.indexOf(query) > -1;
+        }).map((option)=>{
+          return option.value;
+        });
+        let optionIndex;
+
+        filterOptions.forEach((option)=>{
+          optionIndex = this.getValueIndex(value, option);
+          if (this.isTotal && optionIndex < 0) {
+            value.push(option);
+          } else if (!this.isTotal && optionIndex > -1) {
+            value.splice(optionIndex, 1);
+          }
+        });
+
+        this.$emit('input', value);
+        this.emitChange(value);
       },
 
       handleOptionSelect(option, byClick) {

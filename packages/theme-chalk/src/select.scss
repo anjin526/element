@@ -141,3 +141,27 @@
     }
   }
 }
+
+.totalWraper{
+  color: #606266;
+  font-size: 14px;
+  margin: 0 20px;
+  height: 34px;
+  line-height: 34px;
+  padding-top: 5px;
+  border-bottom: 1px solid #F5F5F5;
+  cursor: pointer;
+
+  &.selected{
+    color: #409eff;
+    font-weight: bold;
+  }
+}
+
+.el-select-dropdown__list{
+  padding: 0px;
+}
+
+.optionLabel{
+  vertical-align: 1px;
+}

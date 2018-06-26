@@ -7,10 +7,16 @@
     :class="{
       'selected': itemSelected,
       'is-disabled': disabled || groupDisabled || limitReached,
-      'hover': hover
+      'hover': hover,
+      'total': isTotal
     }">
     <slot>
-      <span>{{ currentLabel }}</span>
+      <el-checkbox
+        v-model="itemSelected"
+        v-if="showCheckbox"
+      >
+      </el-checkbox>
+      <span class="optionLabel">{{ currentLabel }}</span>
     </slot>
   </li>
 </template>
@@ -18,6 +24,7 @@
 <script type="text/babel">
   import Emitter from 'element-ui/src/mixins/emitter';
   import { getValueByPath } from 'element-ui/src/utils/util';
+  import ElCheckbox from 'element-ui/packages/checkbox';
 
   export default {
     mixins: [Emitter],
@@ -28,6 +35,10 @@
 
     inject: ['select'],
 
+    components: {
+      ElCheckbox
+    },
+
     props: {
       value: {
         required: true
@@ -35,6 +46,14 @@
       label: [String, Number],
       created: Boolean,
       disabled: {
+        type: Boolean,
+        default: false
+      },
+      isTotal: {
+        type: Boolean,
+        default: false
+      },
+      showCheckbox: {
         type: Boolean,
         default: false
       }

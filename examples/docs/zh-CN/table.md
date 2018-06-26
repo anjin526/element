@@ -397,12 +397,16 @@
       style="width: 100%">
       <el-table-column
         prop="date"
-        label="日期"
-        width="180">
+        label="日期日期日期日期日期日期"
+        width="180"
+        tips="日期的详细说明，<br/>日期的详细说明"
+        sortable
+        >
       </el-table-column>
       <el-table-column
         prop="name"
         label="姓名"
+        tips="姓名的详细说明"
         width="180">
       </el-table-column>
       <el-table-column
